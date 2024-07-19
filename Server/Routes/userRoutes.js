@@ -2,6 +2,8 @@ import express from "express";
 import User from "../Models/user.js";
 import multer from "multer";
 import env from "dotenv";
+import Post from "../Models/Post.js";
+// import Post from "../Models/Post.js";
 env.config();
 
 import cloudinary from "cloudinary";
@@ -21,7 +23,33 @@ const storage = new CloudinaryStorage({
     upload_preset: "BlogImages", // Specify the upload preset here
   },
 });
-
+router.get("/stats", verifyToken, async (req, res) => {
+  const id = req.user.id;
+  let totalPosts = 0;
+  let data = null;
+  try {
+    const Posts = await Post.find({ userId: id });
+    if (!Posts) {
+      res.status(400).send("No posts found");
+      return;
+    }
+    totalPosts = Posts.length;
+    const lastDate = new Date(Posts[totalPosts - 1].date).toLocaleDateString(
+      "en-US"
+    );
+    data = {
+      totalPosts: totalPosts,
+      lastDate: lastDate,
+    };
+    res.status(200).send(data);
+    // console.log(lastDate);
+    // console.log(Posts);
+    // console.log(id);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred");
+  }
+});
 const upload = multer({ storage: storage });
 router.get("/profile", verifyToken, async (req, res) => {
   try {
